@@ -1,0 +1,43 @@
+{
+  "a_share_core": [
+    {"symbol": "600519", "name": "贵州茅台", "market": "a-share"},
+    {"symbol": "000001", "name": "平安银行", "market": "a-share"},
+    {"symbol": "300750", "name": "宁德时代", "market": "a-share"},
+    {"symbol": "601318", "name": "中国平安", "market": "a-share"},
+    {"symbol": "600036", "name": "招商银行", "market": "a-share"}
+  ],
+  "hk_core": [
+    {"symbol": "0700", "name": "腾讯控股", "market": "hk"},
+    {"symbol": "9988", "name": "阿里巴巴-W", "market": "hk"},
+    {"symbol": "3690", "name": "美团-W", "market": "hk"},
+    {"symbol": "1810", "name": "小米集团-W", "market": "hk"},
+    {"symbol": "1299", "name": "友邦保险", "market": "hk"}
+  ],
+  "us_large_cap": [
+    {"symbol": "AAPL", "name": "Apple", "market": "us"},
+    {"symbol": "MSFT", "name": "Microsoft", "market": "us"},
+    {"symbol": "NVDA", "name": "NVIDIA", "market": "us"},
+    {"symbol": "GOOGL", "name": "Alphabet", "market": "us"},
+    {"symbol": "AMZN", "name": "Amazon", "market": "us"},
+    {"symbol": "META", "name": "Meta Platforms", "market": "us"},
+    {"symbol": "TSLA", "name": "Tesla", "market": "us"}
+  ],
+  "us_tech": [
+    {"symbol": "AAPL", "name": "Apple", "market": "us"},
+    {"symbol": "MSFT", "name": "Microsoft", "market": "us"},
+    {"symbol": "NVDA", "name": "NVIDIA", "market": "us"},
+    {"symbol": "AVGO", "name": "Broadcom", "market": "us"},
+    {"symbol": "AMD", "name": "AMD", "market": "us"},
+    {"symbol": "CRM", "name": "Salesforce", "market": "us"},
+    {"symbol": "ORCL", "name": "Oracle", "market": "us"}
+  ],
+  "all_core": [
+    {"symbol": "600519", "name": "贵州茅台", "market": "a-share"},
+    {"symbol": "300750", "name": "宁德时代", "market": "a-share"},
+    {"symbol": "0700", "name": "腾讯控股", "market": "hk"},
+    {"symbol": "9988", "name": "阿里巴巴-W", "market": "hk"},
+    {"symbol": "AAPL", "name": "Apple", "market": "us"},
+    {"symbol": "MSFT", "name": "Microsoft", "market": "us"},
+    {"symbol": "NVDA", "name": "NVIDIA", "market": "us"}
+  ]
+}

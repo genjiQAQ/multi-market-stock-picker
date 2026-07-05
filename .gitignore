@@ -1,0 +1,27 @@
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local runtime state
+.venv/
+.cache/
+stock-picker-output/
+*.log
+
+# Local generated reports
+screening_report.md
+screening_results.csv
+screening_results.json
+top10_candidates.csv
+score_distribution.png
+top_candidates.png
+data_quality.json

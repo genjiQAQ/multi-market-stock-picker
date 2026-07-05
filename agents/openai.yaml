@@ -1,0 +1,4 @@
+interface:
+  display_name: "Multi-Market Stock Picker"
+  short_description: "A/H/US stock screening and ranking"
+  default_prompt: "Use $multi-market-stock-picker to screen A-share, Hong Kong, and US stocks and generate a Top10 research candidate report."

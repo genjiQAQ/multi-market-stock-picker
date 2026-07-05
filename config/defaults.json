@@ -1,0 +1,65 @@
+{
+  "output_root": "desktop",
+  "default_market": "all",
+  "default_universe": "auto",
+  "default_custom_mode": "append",
+  "default_style": "balanced",
+  "default_run_mode": "fast",
+  "default_top_n": 10,
+  "max_candidates": 200,
+  "fast_enrich_candidates": 30,
+  "cache_ttl_hours": {
+    "market_snapshots": 6,
+    "history": 24,
+    "fundamentals": 72
+  },
+  "request_timeout_seconds": 30,
+  "symbol_timeout_seconds": 20,
+  "provider_failure_breaker_threshold": 8,
+  "provider_failure_cooldown_seconds": 300,
+  "max_retries": 4,
+  "concurrency": 1,
+  "provider_request_interval_seconds": 1.5,
+  "provider_retry_base_delay_seconds": 2.0,
+  "provider_retry_max_delay_seconds": 30.0,
+  "history_period": "9mo",
+  "ai_narrative": {
+    "model": "gpt-4o-mini",
+    "base_url": "https://api.openai.com/v1",
+    "limit": 10,
+    "timeout_seconds": 30
+  },
+  "min_turnover_by_market": {
+    "a-share": 50000000,
+    "hk": 10000000,
+    "us": 5000000
+  },
+  "min_price_by_market": {
+    "a-share": 2,
+    "hk": 1,
+    "us": 3
+  },
+  "exclude_rules": {
+    "a-share": {
+      "exclude_st": true,
+      "exclude_delisted": true,
+      "exclude_bj": true,
+      "min_listing_days": 90,
+      "exclude_near_limit_up": true,
+      "max_change_pct": 9.5,
+      "max_amplitude_pct": 12.0,
+      "min_close_position": 0.35
+    },
+    "hk": {
+      "exclude_penny": true,
+      "exclude_non_common": true
+    },
+    "us": {
+      "exclude_warrant_unit_right": true,
+      "exclude_preferred": true,
+      "exclude_otc": true
+    }
+  },
+  "venv_dir": ".venv",
+  "requirements_file": "requirements.txt"
+}
