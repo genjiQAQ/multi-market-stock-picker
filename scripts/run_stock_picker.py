@@ -77,6 +77,8 @@ def parse_args(argv: list[str] | None = None) -> tuple[argparse.Namespace, list[
             "Picker arguments passed through include: --market, --universe, "
             "--custom-mode, --symbols, --symbols-file, --style, --top-n, "
             "--max-candidates, --run-mode, --out-dir, --config, --no-cache, --live, "
+            "--watchlist, --watchlist-name, --backtest, --backtest-start, "
+            "--backtest-end, --backtest-frequency, "
             "--ai-narrative, --ai-model, --ai-base-url, and --ai-narrative-limit."
         ),
     )

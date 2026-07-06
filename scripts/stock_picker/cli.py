@@ -5,8 +5,10 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
+from .backtest import run_backtest
 from . import providers
 from .charts import generate_charts
 from .models import MARKETS, QualityLog, StockRecord
@@ -15,6 +17,7 @@ from .normalization import detect_exclude_reason
 from .reporting import ensure_output_dir, write_outputs
 from .scoring import score_records
 from .universe import build_universe
+from .watchlist import apply_watchlist, resolve_watchlist_state_dir
 
 
 SKILL_DIR = Path(__file__).resolve().parents[2]
@@ -61,6 +64,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--config", default=str(DEFAULT_CONFIG_PATH), help="Config JSON path")
     parser.add_argument("--no-cache", action="store_true", help="Skip cached provider data")
     parser.add_argument("--live", action="store_true", help="Allow live enhanced provider calls")
+    parser.add_argument("--watchlist", action="store_true", help="Update persistent watchlist state and emit watchlist reports")
+    parser.add_argument("--watchlist-name", default=None, help="Watchlist namespace, defaults to config watchlist.name")
+    parser.add_argument("--watchlist-state-dir", default=None, help="Persistent watchlist state directory")
+    parser.add_argument("--watchlist-lookback-runs", type=int, default=None, help="Runs before missing candidates are removed")
+    parser.add_argument("--backtest", action="store_true", help="Run cache-history based backtest instead of normal screening")
+    parser.add_argument("--backtest-start", default=None, help="Backtest start date, YYYY-MM-DD")
+    parser.add_argument("--backtest-end", default=None, help="Backtest end date, YYYY-MM-DD")
+    parser.add_argument("--backtest-window-days", type=int, default=None, help="History rows used for each evaluation")
+    parser.add_argument("--backtest-hold-days", type=int, default=None, help="Forward hold rows used for evaluation")
+    parser.add_argument("--backtest-frequency", choices=["daily", "weekly", "monthly"], default=None, help="Backtest evaluation frequency")
+    parser.add_argument("--backtest-top-n", type=int, default=None, help="Backtest TopN, defaults to --top-n")
     parser.add_argument("--ai-narrative", action="store_true", help="Use OPENAI_API_KEY to generate candidate narrative fields")
     parser.add_argument("--ai-model", default=None, help="Model used when --ai-narrative is enabled")
     parser.add_argument("--ai-base-url", default=None, help="OpenAI-compatible base URL used when --ai-narrative is enabled")
@@ -76,6 +90,14 @@ def apply_defaults(args: argparse.Namespace, config: dict) -> argparse.Namespace
     args.run_mode = args.run_mode or config.get("default_run_mode", "fast")
     args.top_n = args.top_n or int(config.get("default_top_n", 10))
     args.max_candidates = args.max_candidates or int(config.get("max_candidates", 200))
+    watchlist_config = config.get("watchlist", {}) if isinstance(config.get("watchlist"), dict) else {}
+    backtest_config = config.get("backtest", {}) if isinstance(config.get("backtest"), dict) else {}
+    args.watchlist_name = args.watchlist_name or watchlist_config.get("name", "default")
+    args.watchlist_lookback_runs = args.watchlist_lookback_runs or int(watchlist_config.get("lookback_runs", 5))
+    args.backtest_window_days = args.backtest_window_days or int(backtest_config.get("window_days", 120))
+    args.backtest_hold_days = args.backtest_hold_days or int(backtest_config.get("hold_days", 20))
+    args.backtest_frequency = args.backtest_frequency or backtest_config.get("frequency", "weekly")
+    args.backtest_top_n = args.backtest_top_n or args.top_n
     ai_config = config.get("ai_narrative", {}) if isinstance(config.get("ai_narrative"), dict) else {}
     args.ai_model = args.ai_model or ai_config.get("model")
     args.ai_base_url = args.ai_base_url or ai_config.get("base_url")
@@ -92,10 +114,34 @@ def validate_args(args: argparse.Namespace) -> None:
         raise ValueError(f"--run-mode must be one of: {', '.join(RUN_MODES)}")
     if args.ai_narrative_limit <= 0:
         raise ValueError("--ai-narrative-limit must be positive")
+    if args.watchlist_lookback_runs <= 0:
+        raise ValueError("--watchlist-lookback-runs must be positive")
+    if args.backtest_window_days <= 0:
+        raise ValueError("--backtest-window-days must be positive")
+    if args.backtest_hold_days <= 0:
+        raise ValueError("--backtest-hold-days must be positive")
+    if args.backtest_top_n <= 0:
+        raise ValueError("--backtest-top-n must be positive")
+    if args.backtest_frequency not in {"daily", "weekly", "monthly"}:
+        raise ValueError("--backtest-frequency must be daily, weekly, or monthly")
+    if args.backtest_start:
+        _parse_cli_date(args.backtest_start, "--backtest-start")
+    if args.backtest_end:
+        _parse_cli_date(args.backtest_end, "--backtest-end")
+    if args.backtest_start and args.backtest_end:
+        if _parse_cli_date(args.backtest_start, "--backtest-start") > _parse_cli_date(args.backtest_end, "--backtest-end"):
+            raise ValueError("--backtest-start must be earlier than or equal to --backtest-end")
     if args.universe == "custom" and not (args.symbols or args.symbols_file):
         raise ValueError("--universe custom requires --symbols or --symbols-file")
     if "+custom" in args.universe and not (args.symbols or args.symbols_file):
         raise ValueError(f"--universe {args.universe} requires --symbols or --symbols-file")
+
+
+def _parse_cli_date(value: str, flag_name: str) -> date:
+    try:
+        return date.fromisoformat(value[:10])
+    except Exception as exc:
+        raise ValueError(f"{flag_name} must be YYYY-MM-DD") from exc
 
 
 def apply_filters(records: list[StockRecord], config: dict, quality: QualityLog) -> list[StockRecord]:
@@ -226,6 +272,23 @@ def run(args: argparse.Namespace, config: dict) -> tuple[int, dict[str, str]]:
         live=args.live,
     )
     records = apply_filters(records, config, quality)
+    if args.backtest:
+        quality.backtest_mode = True
+        output_dir = ensure_output_dir(args.out_dir, f"{args.market}-backtest")
+        paths = run_backtest(
+            records=records,
+            output_dir=output_dir,
+            style=args.style,
+            run_mode=args.run_mode,
+            top_n=args.backtest_top_n,
+            start=args.backtest_start,
+            end=args.backtest_end,
+            window_days=args.backtest_window_days,
+            hold_days=args.backtest_hold_days,
+            frequency=args.backtest_frequency,
+            config=config,
+        )
+        return EXIT_SUCCESS, paths
     if not records:
         output_dir = ensure_output_dir(args.out_dir, args.market)
         paths = write_outputs(
@@ -266,6 +329,17 @@ def run(args: argparse.Namespace, config: dict) -> tuple[int, dict[str, str]]:
 
     output_dir = ensure_output_dir(args.out_dir, args.market)
     try:
+        extra_paths: dict[str, str] = {}
+        if args.watchlist:
+            extra_paths = apply_watchlist(
+                records=records,
+                output_dir=output_dir,
+                top_n=args.top_n,
+                watchlist_name=args.watchlist_name,
+                state_dir=resolve_watchlist_state_dir(args.watchlist_state_dir),
+                lookback_runs=args.watchlist_lookback_runs,
+                quality=quality,
+            )
         chart_paths = generate_charts(records, output_dir, args.top_n)
         paths = write_outputs(
             output_dir=output_dir,
@@ -277,6 +351,7 @@ def run(args: argparse.Namespace, config: dict) -> tuple[int, dict[str, str]]:
             config=config,
             quality=quality,
             chart_paths=chart_paths,
+            extra_paths=extra_paths,
         )
     except Exception as exc:
         print(f"output generation failed: {exc}", file=sys.stderr)

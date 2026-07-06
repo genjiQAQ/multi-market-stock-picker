@@ -46,6 +46,13 @@ final_score
 data_coverage
 quality_coverage
 rating
+watch_status
+previous_rank
+rank_change
+previous_score
+score_change
+watch_runs
+last_seen_at
 reason
 risk
 watch_condition
@@ -93,6 +100,9 @@ cache_expired
 provider_breakers
 run_mode
 result_level
+watchlist_state_path
+watchlist_changes_count
+backtest_mode
 warnings
 ```
 
@@ -136,6 +146,37 @@ Required disclaimer:
 ```text
 本报告仅用于研究辅助，不构成投资建议。
 ```
+
+## Watchlist Outputs
+
+When `--watchlist` is enabled, write:
+
+```text
+watchlist_state.json
+watchlist_changes.csv
+watchlist_report.md
+```
+
+Allowed watch statuses:
+
+- `新进入`
+- `继续跟踪`
+- `重点延续`
+- `降级观察`
+- `移出观察池`
+
+## Backtest Outputs
+
+When `--backtest` is enabled, write:
+
+```text
+backtest_report.md
+backtest_results.csv
+backtest_results.json
+backtest_quality.json
+```
+
+Backtest mode does not need to write the normal screening report files.
 
 ## Exit Codes
 

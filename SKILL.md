@@ -56,8 +56,10 @@ python3 ~/.codex/skills/multi-market-stock-picker/scripts/run_stock_picker.py \
 1. Read `references/data-sources.md` before changing providers, ticker conversion, market filters, or auto-universe behavior.
 2. Read `references/scoring-model.md` before changing scoring weights, factor formulas, missing-data rules, or cross-market ranking.
 3. Read `references/output-schema.md` before changing CSV/JSON/report fields or exit codes.
-4. Prefer the bundled runner so the caller project does not need its own finance Python stack.
-5. Use actual fetched or user-provided data only; do not invent missing prices, fundamentals, volumes, or rankings.
+4. Read `references/watchlist-spec.md` before changing persistent candidate tracking.
+5. Read `references/backtest-spec.md` before changing backtest behavior, metrics, or schemas.
+6. Prefer the bundled runner so the caller project does not need its own finance Python stack.
+7. Use actual fetched, cached, or user-provided data only; do not invent missing prices, fundamentals, volumes, histories, or rankings.
 
 ## Inputs
 
@@ -73,6 +75,10 @@ python3 ~/.codex/skills/multi-market-stock-picker/scripts/run_stock_picker.py \
 - `--out-dir`: output directory. If omitted, reports save to `~/Desktop/stock-picker-output/<market>/<timestamp>/` on macOS/Linux and `%USERPROFILE%\Desktop\stock-picker-output\<market>\<timestamp>\` on Windows.
 - `--no-cache`: skip cached market snapshots, histories, and fundamentals.
 - `--live`: allow live optional integration checks and enhanced real-time provider calls.
+- `--watchlist`: update persistent candidate tracking and write watchlist artifacts.
+- `--watchlist-name`, `--watchlist-state-dir`, `--watchlist-lookback-runs`: optional watchlist namespace, state directory, and stale-run threshold.
+- `--backtest`: run cache-history based backtest instead of normal screening.
+- `--backtest-start`, `--backtest-end`, `--backtest-window-days`, `--backtest-hold-days`, `--backtest-frequency`, `--backtest-top-n`: optional backtest controls.
 - `--ai-narrative`: use `OPENAI_API_KEY` to generate per-candidate `reason`, `risk`, `watch_condition`, and `invalidation` text from structured scoring inputs. If unavailable or invalid, the runner records a warning and keeps deterministic fallback text.
 - `--ai-model`, `--ai-base-url`, `--ai-narrative-limit`: optional AI narrative model, OpenAI-compatible endpoint, and maximum number of top candidates to rewrite.
 
@@ -89,6 +95,19 @@ Expected artifacts:
 - `score_distribution.png`
 - `top_candidates.png`
 - `data_quality.json`
+
+When `--watchlist` is enabled, also write:
+
+- `watchlist_state.json`
+- `watchlist_changes.csv`
+- `watchlist_report.md`
+
+When `--backtest` is enabled, write:
+
+- `backtest_report.md`
+- `backtest_results.csv`
+- `backtest_results.json`
+- `backtest_quality.json`
 
 For `--market all`, write both `top10_global` and `top_per_market` into JSON and explain in the report that cross-market scores are research rankings, not direct investment priority across currencies, sessions, data delays, and valuation coverage.
 

@@ -247,7 +247,18 @@ def apply_market_scores(records: list[StockRecord], style: str, quality: Quality
         record.watch_condition = build_watch_condition(record)
         record.invalidation = build_invalidation(record)
         for field_name, value in record.to_row().items():
-            if field_name in {"rank_global", "rank_in_market", "exclude_reason"}:
+            if field_name in {
+                "rank_global",
+                "rank_in_market",
+                "exclude_reason",
+                "watch_status",
+                "previous_rank",
+                "rank_change",
+                "previous_score",
+                "score_change",
+                "watch_runs",
+                "last_seen_at",
+            }:
                 continue
             if value is None or value == "":
                 quality.add_missing(field_name)

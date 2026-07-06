@@ -38,6 +38,13 @@ CSV_COLUMNS = [
     "data_coverage",
     "quality_coverage",
     "rating",
+    "watch_status",
+    "previous_rank",
+    "rank_change",
+    "previous_score",
+    "score_change",
+    "watch_runs",
+    "last_seen_at",
     "reason",
     "risk",
     "watch_condition",
@@ -196,6 +203,17 @@ def build_markdown_report(
             )
         lines.append("")
 
+    if quality.watchlist_changes:
+        lines.extend(["## 候选跟踪变化", ""])
+        for item in quality.watchlist_changes[:20]:
+            symbol = item.get("yahoo_symbol") or item.get("raw_symbol") or "UNKNOWN"
+            lines.append(
+                f"- {item.get('watch_status')}：{item.get('name') or symbol} "
+                f"({item.get('market')} / {symbol})，当前排名 {item.get('current_rank') or '未入选'}，"
+                f"前次排名 {item.get('previous_rank') or '无'}，评分变化 {item.get('score_change') if item.get('score_change') is not None else '无'}。"
+            )
+        lines.append("")
+
     if market == "all":
         lines.extend(
             [
@@ -236,6 +254,7 @@ def write_outputs(
     config: dict,
     quality: QualityLog,
     chart_paths: dict[str, str] | None = None,
+    extra_paths: dict[str, str] | None = None,
 ) -> dict[str, str]:
     generated = generated_at()
     config["_run_mode"] = quality.run_mode
@@ -275,6 +294,7 @@ def write_outputs(
         "top10_csv": str(output_dir / "top10_candidates.csv"),
         "data_quality": str(output_dir / "data_quality.json"),
         **(chart_paths or {}),
+        **(extra_paths or {}),
     }
 
 

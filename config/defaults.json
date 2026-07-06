@@ -8,6 +8,16 @@
   "default_top_n": 10,
   "max_candidates": 200,
   "fast_enrich_candidates": 30,
+  "watchlist": {
+    "name": "default",
+    "lookback_runs": 5,
+    "score_drop_threshold": 8
+  },
+  "backtest": {
+    "window_days": 120,
+    "hold_days": 20,
+    "frequency": "weekly"
+  },
   "cache_ttl_hours": {
     "market_snapshots": 6,
     "history": 24,

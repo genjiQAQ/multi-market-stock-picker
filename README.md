@@ -25,6 +25,9 @@
   - `score_distribution.png`
   - `top_candidates.png`
   - `data_quality.json`
+- 跟踪与验证：
+  - Watchlist 模式会记录候选变化并生成跟踪报告。
+  - Backtest 模式会基于缓存历史 K 线验证评分模型。
 
 ## 快速开始
 
@@ -76,6 +79,32 @@ python3 ~/.codex/skills/multi-market-stock-picker/scripts/run_stock_picker.py \
   --top-n 10
 ```
 
+日常筛选并更新 Watchlist：
+
+```bash
+python3 ~/.codex/skills/multi-market-stock-picker/scripts/run_stock_picker.py \
+  --market a-share \
+  --universe auto \
+  --run-mode fast \
+  --top-n 10 \
+  --watchlist \
+  --watchlist-name a-share-fast
+```
+
+使用缓存 K 线跑回测验证：
+
+```bash
+python3 ~/.codex/skills/multi-market-stock-picker/scripts/run_stock_picker.py \
+  --market us \
+  --universe custom \
+  --symbols AAPL,MSFT,NVDA \
+  --backtest \
+  --backtest-start 2025-01-01 \
+  --backtest-end 2025-12-31 \
+  --backtest-frequency weekly \
+  --backtest-top-n 2
+```
+
 指定输出目录：
 
 ```bash
@@ -105,6 +134,16 @@ python3 ~/.codex/skills/multi-market-stock-picker/scripts/run_stock_picker.py \
 | `--max-candidates` | 粗筛后最多进入补全范围的候选数，默认 200 |
 | `--no-cache` | 跳过本地缓存，强制重新请求数据源 |
 | `--live` | 允许可选实时增强调用 |
+| `--watchlist` | 启用候选跟踪，写入 watchlist 状态和变化报告 |
+| `--watchlist-name` | Watchlist 命名空间，默认 `default` |
+| `--watchlist-state-dir` | Watchlist 持久状态目录，默认桌面输出根目录下 `_state/watchlists` |
+| `--watchlist-lookback-runs` | 连续缺席多少轮后移出观察池，默认 5 |
+| `--backtest` | 启用缓存历史 K 线回测，不生成常规筛选报告 |
+| `--backtest-start` / `--backtest-end` | 回测日期范围 |
+| `--backtest-window-days` | 每个评估截面使用的历史窗口，默认 120 |
+| `--backtest-hold-days` | 入选后观察期，默认 20 |
+| `--backtest-frequency` | `daily`、`weekly`、`monthly`，默认 `weekly` |
+| `--backtest-top-n` | 回测每期选出的 TopN，默认复用 `--top-n` |
 | `--ai-narrative` | 使用 OpenAI-compatible API 生成候选叙述，需 `OPENAI_API_KEY` |
 
 ## 运行模式选择
@@ -190,6 +229,10 @@ TTL 默认配置在 `config/defaults.json`：
 | `final_score` | 综合评分，越高越好 |
 | `data_coverage` / `quality_coverage` | 数据覆盖率 / 质量字段覆盖率 |
 | `rating` | `重点跟踪`、`积极观察`、`需进一步验证`、`中性观察`、`暂不纳入` |
+| `watch_status` | Watchlist 状态，例如 `新进入`、`继续跟踪`、`重点延续`、`降级观察`、`移出观察池` |
+| `previous_rank` / `rank_change` | 上次排名与排名变化 |
+| `previous_score` / `score_change` | 上次评分与评分变化 |
+| `watch_runs` / `last_seen_at` | 连续跟踪次数与最近出现时间 |
 
 `data_quality.json` 会记录：
 
@@ -199,6 +242,51 @@ TTL 默认配置在 `config/defaults.json`：
 - 缓存使用与过期记录。
 - provider 熔断记录。
 - 本轮 `run_mode` 和 `result_level`。
+
+## Watchlist 跟踪
+
+启用 `--watchlist` 后，工具会读取并更新持久状态：
+
+```text
+~/Desktop/stock-picker-output/_state/watchlists/<watchlist-name>.json
+```
+
+每次运行额外输出：
+
+- `watchlist_state.json`
+- `watchlist_changes.csv`
+- `watchlist_report.md`
+
+状态含义：
+
+- `新进入`：本次 TopN 首次出现。
+- `继续跟踪`：仍在 TopN，评分和排名未明显恶化。
+- `重点延续`：多次进入 TopN 且表现稳定。
+- `降级观察`：跌出 TopN、评分明显下降、或结果等级变为低覆盖率。
+- `移出观察池`：连续缺席达到阈值或评级转弱。
+
+## Backtest 回测
+
+启用 `--backtest` 后，本次运行不会生成常规筛选报告，而是生成模型验证产物：
+
+- `backtest_report.md`
+- `backtest_results.csv`
+- `backtest_results.json`
+- `backtest_quality.json`
+
+V1 只使用 `.cache/history/` 中已有历史 K 线。缺少历史或历史窗口不足时，会写入 `backtest_quality.json`，不会补造数据。
+
+核心指标包括：
+
+- `period_count`
+- `avg_forward_return`
+- `median_forward_return`
+- `win_rate`
+- `max_drawdown`
+- `avg_topn_score`
+- `low_coverage_ratio`
+- `industry_concentration`
+- `market_breakdown`
 
 ## 注意事项
 
@@ -261,6 +349,8 @@ multi-market-stock-picker/
     data-sources.md
     output-schema.md
     scoring-model.md
+    watchlist-spec.md
+    backtest-spec.md
   scripts/
     run_stock_picker.py
     stock_picker/

@@ -22,6 +22,10 @@ class QualityLog:
     provider_breakers: list[dict[str, Any]] = field(default_factory=list)
     run_mode: str = ""
     result_level: str = ""
+    watchlist_state_path: str = ""
+    watchlist_changes_count: int = 0
+    watchlist_changes: list[dict[str, Any]] = field(default_factory=list)
+    backtest_mode: bool = False
     warnings: list[str] = field(default_factory=list)
 
     def add_source_failure(self, market: str, source: str, error: Exception | str) -> None:
@@ -51,6 +55,9 @@ class QualityLog:
             "provider_breakers": self.provider_breakers,
             "run_mode": self.run_mode,
             "result_level": self.result_level,
+            "watchlist_state_path": self.watchlist_state_path,
+            "watchlist_changes_count": self.watchlist_changes_count,
+            "backtest_mode": self.backtest_mode,
             "warnings": self.warnings,
         }
 
@@ -94,6 +101,13 @@ class StockRecord:
     risk: str = ""
     watch_condition: str = ""
     invalidation: str = ""
+    watch_status: str = ""
+    previous_rank: int | None = None
+    rank_change: int | None = None
+    previous_score: float | None = None
+    score_change: float | None = None
+    watch_runs: int = 0
+    last_seen_at: str = ""
 
     def to_row(self) -> dict[str, Any]:
         return {
@@ -122,6 +136,13 @@ class StockRecord:
             "data_coverage": self.scores.get("data_coverage"),
             "quality_coverage": self.scores.get("quality_coverage"),
             "rating": self.rating,
+            "watch_status": self.watch_status,
+            "previous_rank": self.previous_rank,
+            "rank_change": self.rank_change,
+            "previous_score": self.previous_score,
+            "score_change": self.score_change,
+            "watch_runs": self.watch_runs,
+            "last_seen_at": self.last_seen_at,
             "reason": self.reason,
             "risk": self.risk,
             "watch_condition": self.watch_condition,
